@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useFirebaseData } from "@/hooks/useFirebaseData";
+import { useHistoryLogger } from "@/hooks/useHistoryLogger";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { Sidebar } from "@/components/Sidebar";
 import { DoorCard } from "@/components/DoorCard";
@@ -7,6 +8,7 @@ import { StatusCard } from "@/components/StatusCard";
 import { EnvironmentGauge } from "@/components/EnvironmentGauge";
 import { ParkingSection } from "@/components/ParkingSection";
 import { ControlCard } from "@/components/ControlCard";
+import { ChatBot } from "@/components/ChatBot";
 import {
   Lightbulb,
   Fan,
@@ -25,6 +27,7 @@ const sectionTitles: Record<string, string> = {
 const Index = () => {
   const { data, connected } = useFirebaseData();
   const [activeSection, setActiveSection] = useState("overview");
+  useHistoryLogger(data.temperature, data.humidity);
 
   const gasStatus = data.gas !== "NO" && data.gas !== "—" ? "alert" : "active";
 
@@ -107,6 +110,8 @@ const Index = () => {
         {activeSection === "environment" && renderEnvironment()}
         {activeSection === "parking" && renderParking()}
       </main>
+
+      <ChatBot homeData={data} />
     </div>
   );
 };
