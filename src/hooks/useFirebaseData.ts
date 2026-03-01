@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { database, ref, onValue } from "@/lib/firebase";
 
+export interface ParkingSlot {
+  status: string;
+}
+
 export interface HomeData {
   main_door: { access: string; door_state: string };
   side_door: { access: string; door_state: string };
@@ -11,8 +15,11 @@ export interface HomeData {
   temperature: number;
   humidity: number;
   gas: string;
-  parking_slots: number;
-  parking_gate: string;
+  parking: {
+    slot1: ParkingSlot;
+    slot2: ParkingSlot;
+    gate: string;
+  };
   water_pump: string;
   gsm_last_command: string;
 }
@@ -27,8 +34,11 @@ const defaultData: HomeData = {
   temperature: 0,
   humidity: 0,
   gas: "—",
-  parking_slots: 0,
-  parking_gate: "—",
+  parking: {
+    slot1: { status: "—" },
+    slot2: { status: "—" },
+    gate: "—",
+  },
   water_pump: "—",
   gsm_last_command: "—",
 };
@@ -38,13 +48,79 @@ export function useFirebaseData() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
+    // Helper: extract a string from a value that may be a plain string or an object with status/value keys
+    const str = (v: unknown): string => {
+      if (v == null) return "—";
+      if (typeof v === "string") return v;
+      if (typeof v === "number") return String(v);
+      if (typeof v === "object") {
+        const obj = v as Record<string, unknown>;
+        if (obj.status != null) return String(obj.status);
+        if (obj.value != null) return String(obj.value);
+      }
+      return "—";
+    };
+
+    const num = (v: unknown): number => {
+      if (typeof v === "number") return v;
+      if (typeof v === "object" && v != null) {
+        const obj = v as Record<string, unknown>;
+        if (typeof obj.value === "number") return obj.value;
+      }
+      return Number(v) || 0;
+    };
+
+    const door = (v: unknown): { access: string; door_state: string } => {
+      if (typeof v === "object" && v != null) {
+        const obj = v as Record<string, unknown>;
+        return { access: str(obj.access), door_state: str(obj.door_state) };
+      }
+      return { access: "—", door_state: "—" };
+    };
+
+    // Convert a parking slot value to "Occupied" or "Free"
+    // 0 means free, any other value means occupied
+    const slotStatus = (v: unknown): string => {
+      if (v == null) return "—";
+      let raw: unknown = v;
+      if (typeof v === "object") {
+        const obj = v as Record<string, unknown>;
+        raw = obj.status ?? obj.value ?? v;
+        // If still an object, bail out
+        if (typeof raw === "object") return "—";
+      }
+      const n = Number(raw);
+      if (!isNaN(n)) return n === 0 ? "Free" : "Occupied";
+      // If it's already a descriptive string, pass through
+      if (typeof raw === "string") return raw;
+      return "—";
+    };
+
     const dbRef = ref(database, "/");
     const unsubscribe = onValue(
       dbRef,
       (snapshot) => {
         const val = snapshot.val();
         if (val) {
-          setData({ ...defaultData, ...val });
+          const parking = val.parking || {};
+          setData({
+            main_door: door(val.main_door),
+            side_door: door(val.side_door),
+            buzzer: str(val.buzzer),
+            lamp: str(val.lamp),
+            fan: str(val.fan),
+            curtains: str(val.curtains),
+            temperature: num(val.temperature),
+            humidity: num(val.humidity),
+            gas: str(val.gas),
+            parking: {
+              slot1: { status: slotStatus(parking.slot1) },
+              slot2: { status: slotStatus(parking.slot2) },
+              gate: str(parking.gate),
+            },
+            water_pump: str(val.water_pump),
+            gsm_last_command: str(val.gsm_last_command),
+          });
           setConnected(true);
         }
       },
