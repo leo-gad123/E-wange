@@ -9,6 +9,7 @@ import { EnvironmentGauge } from "@/components/EnvironmentGauge";
 import { ParkingSection } from "@/components/ParkingSection";
 import { ControlCard } from "@/components/ControlCard";
 import { ChatBot } from "@/components/ChatBot";
+import { VoiceAssistant } from "@/components/VoiceAssistant";
 import {
   Lightbulb,
   Fan,
@@ -29,7 +30,8 @@ const Index = () => {
   const [activeSection, setActiveSection] = useState("overview");
   useHistoryLogger(data.temperature, data.humidity);
 
-  const gasStatus = data.gas !== "NO" && data.gas !== "—" ? "alert" : "active";
+  const gasHigh = data.gasValue > 500;
+  const gasStatus = gasHigh ? "alert" : "active";
 
   const renderDoors = () => (
     <section className="mb-6 sm:mb-8">
@@ -66,9 +68,9 @@ const Index = () => {
         <StatusCard
           title="Gas Sensor"
           icon={Flame}
-          value={data.gas === "NO" ? "Safe" : data.gas}
+          value={gasHigh ? `High (${data.gasValue})` : "Safe"}
           status={gasStatus}
-          subtitle={gasStatus === "alert" ? "Gas detected!" : "No gas detected"}
+          subtitle={gasHigh ? "⚠️ Gas level too high!" : `Level: ${data.gasValue}`}
           index={5}
         />
       </div>
@@ -111,6 +113,7 @@ const Index = () => {
       </main>
 
       <ChatBot homeData={data} />
+      <VoiceAssistant homeData={data} />
     </div>
   );
 };

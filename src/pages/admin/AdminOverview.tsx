@@ -17,20 +17,20 @@ const AdminOverview = () => {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-foreground mb-1">Admin Overview</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Admin Overview</h2>
         <p className="text-sm text-muted-foreground">
           Welcome back, <span className="text-foreground font-medium">{user?.email}</span>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08, duration: 0.4 }}
-            className="glass-card p-5"
+            className="glass-card p-3 sm:p-5"
           >
             <div className="flex items-center justify-between mb-3">
               <stat.icon className={`h-5 w-5 ${stat.color}`} />
