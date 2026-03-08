@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { database, ref, onValue } from "@/lib/firebase";
+import { database, ref, onValue, set } from "@/lib/firebase";
+import { get } from "firebase/database";
 
 export interface ParkingSlot {
   status: string;
@@ -21,6 +22,7 @@ export interface HomeData {
     gate: string;
   };
   water_pump: string;
+  soil_moisture: number;
   gsm_last_command: string;
 }
 
@@ -40,6 +42,7 @@ const defaultData: HomeData = {
     gate: "—",
   },
   water_pump: "—",
+  soil_moisture: 0,
   gsm_last_command: "—",
 };
 
@@ -83,6 +86,14 @@ export function useFirebaseData() {
       return "—";
     };
 
+    // Initialize soil_moisture in Firebase if it doesn't exist
+    const soilRef = ref(database, "/soil_moisture");
+    get(soilRef).then((snap) => {
+      if (!snap.exists()) {
+        set(soilRef, 0);
+      }
+    });
+
     const dbRef = ref(database, "/");
     const unsubscribe = onValue(
       dbRef,
@@ -123,6 +134,7 @@ export function useFirebaseData() {
               gate: str(parking.gate),
             },
             water_pump: str(val.water_pump),
+            soil_moisture: num(val.soil_moisture),
             gsm_last_command: str(val.gsm_last_command),
           });
           setConnected(true);
